@@ -20,7 +20,7 @@ object TodoRepository {
   final case class TodoNotFound(id: String) extends Exception("")
 }
 
-class InMemoryTodoRepository(initialTodos: Seq[Todo] = Seq.empty)(implicit ec: ExecutionContext) extends TodoRepository {
+class InMemoryTodoRepository(initialTodos: Seq[Todo] = Seq.empty)(implicit ec: ExecutionContext) extends TodoRepository with TodoJsonSupport {
 
   private var todos: Vector[Todo] = initialTodos.toVector
 

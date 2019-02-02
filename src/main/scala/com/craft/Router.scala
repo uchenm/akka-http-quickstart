@@ -1,5 +1,6 @@
 package com.craft
 
+import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.server.Directive._
 
@@ -8,7 +9,7 @@ trait Router {
 }
 
 class TodoRouter(todoRepository: TodoRepository) extends Router
-  with Directives with TodoDirectives with ValidatorDirectives {
+  with Directives with TodoDirectives with ValidatorDirectives with TodoJsonSupport {
 
   override def route: Route = pathPrefix("todos") {
     pathEndOrSingleSlash {
@@ -25,18 +26,18 @@ class TodoRouter(todoRepository: TodoRepository) extends Router
           }
         }
       }
-
-
-
-
     } ~ path(Segment) { id: String =>
       put {
         entity(as[UpdateTodo]) { updateTodo =>
           validateWith(UpdateTodoValidator)(updateTodo) {
-            complete(updateTodo)
-//            handleWithGeneric(todoRepository.update(id, updateTodo)) {todo =>
-//              complete(todo)
-//            }
+            handle(todoRepository.update(id, updateTodo)) {
+              case TodoRepository.TodoNotFound(_) =>
+                ApiError.todoNotFound(id)
+              case _ =>
+                ApiError.generic
+            } { todo =>
+              complete(todo)
+            }
           }
         }
       }
